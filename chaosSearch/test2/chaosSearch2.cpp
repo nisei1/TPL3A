@@ -50,7 +50,7 @@ struct ChaosNN
 };
 
 /***グローバル変数の宣言***/
-vector<ChaosNN> cnn(CITY_NUM);							   //カオスサーチ用のvector<ChaosNN>
+vector<ChaosNN> cnn(T_TIMES);							   //カオスサーチ用のvector<ChaosNN>
 vector<vector<int>> edge(CITY_NUM, vector<int>(CITY_NUM)); //TSPを表す2次元vector、例) 1 -> 2 のコストを要素へ記録 edge[0][1] = 1から2へ行くためのコスト格納
 vector<int> city;										   //巡回路用vector、edgeの要素番号へ入れるのに使用
 ofstream out(OUT_NAME);									   //ファイル出力用変数
@@ -70,7 +70,7 @@ inline void twoOptSwap(int, int);		//2-opt交換実行関数(引数:都市1,都�
 inline double sigmoid(double);			//シグモイド関数
 inline double calcZai(int, int);		//(3)式関数
 inline double calcEta(int, int);		//(4)式関数
-inline double delta(int, int);			//(3)式のΔij関数
+inline double calcDelta(int, int);		//(3)式のΔij関数
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -120,6 +120,7 @@ int main(int argc, char const *argv[])
 				//TODO:(3),(4),(5?),(6)
 				calcEta(i, t + 1);
 				calcZeta(i, t + 1);
+				calcZai(i, t + 1);
 			}
 		}
 	}
@@ -301,6 +302,7 @@ inline void twoOptSwap(int p1, int p2)
 	else
 	{
 		cout << "ERROR:2-optSwap, Not twoOptPermission Point" << endl;
+		exit(0);
 	}
 }
 
@@ -311,9 +313,9 @@ inline double sigmoid(double x)
 
 inline double calcZai(int i, int t)
 {
-	double max = 0.0;
+	// double max = 0.0;
 
-	//TODO:実装はDELTA＿IJができてから考える
+	// TODO:実装はDELTA＿IJができてから考える
 	// for (int j = 0; j < CITY_NUM; j++)
 	// {
 	// 	if ()
@@ -324,6 +326,29 @@ inline double calcZai(int i, int t)
 	// }
 
 	// max = calcZeta(j,t);
+	// return max;
+	double max = 0.0;
+	bool isFirst = true; //初期max代入時に利用
+	for (int j = 0; j < CITY_NUM; j++)
+	{
+		if (!(twoOptPermission(i, j)))
+		{
+			continue;
+		}
+		else
+		{
+			double sumZetaBetaDelta = calcZeta(i, t) + BETA * calcDelta(i, j);
+			if (isFirst)
+			{
+				max = sumZetaBetaDelta;
+				isFirst = false;
+			}
+			if (max < sumZetaBetaDelta)
+			{
+				max = sumZetaBetaDelta;
+			}
+		}
+	}
 	return max;
 }
 
@@ -353,7 +378,18 @@ inline double calcZeta(int i, int t)
 	return -ALPHA * sum + THETA;
 }
 
-inline double delta(int i, int j)
+inline double calcDelta(int i, int j)
 {
-	
+	if (twoOptPermission(i, j))
+	{
+		//TODO:
+		double difference = 0.0;
+
+		return difference;
+	}
+	else
+	{
+		cout << "ERROR:calcDelta twoOptPermission is false" << endl;
+		exit(0);
+	}
 }
