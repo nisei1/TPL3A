@@ -30,13 +30,6 @@ using namespace std;
 
 /***クラス・構造体の宣言***/
 //カオスサーチ用の構造体
-// struct ChaosNN
-// {
-// 	double zai = 0.0;
-// 	double zeta = 0.0;
-// 	double eta = 0.0;
-// 	double x = 0.0;
-// };
 struct ChaosNN
 {
 	ChaosNN() : zai(CITY_NUM, 0.0) {}
@@ -48,9 +41,15 @@ struct ChaosNN
 	ChaosNN() : x(CITY_NUM, 0.0) {}
 	vector<double> x;
 };
+//Δijが最大にコストを下げた時のijを格納するための構造体
+struct MaxDelta_I_J
+{
+	int i;
+	int j;
+};
 
 /***グローバル変数の宣言***/
-vector<ChaosNN> cnn(T_TIMES);							   //カオスサーチ用のvector<ChaosNN>
+//2-optの時にも利用
 vector<vector<int>> edge(CITY_NUM, vector<int>(CITY_NUM)); //TSPを表す2次元vector、例) 1 -> 2 のコストを要素へ記録 edge[0][1] = 1から2へ行くためのコスト格納
 vector<int> city;										   //巡回路用vector、edgeの要素番号へ入れるのに使用
 ofstream out(OUT_NAME);									   //ファイル出力用変数
@@ -59,18 +58,24 @@ ifstream in(IN_NAME);									   //ファイル入力用変数
 time_t t = time(NULL);
 random_device seed_gen;
 mt19937 engine(seed_gen() * t);
+//カオスサーチに利用
+vector<ChaosNN> cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
+MaxDelta_I_J maxIJ;			  //Δijが最大にコストを下げた時のijを格納
 
 /***テンプレート関数の宣言***/
-void inputTSP(void);					//TSPをedgeへ格納する関数
-void makeFirstTour(void);				//初回巡回路をランダムに作成する関数
-inline int calcDistance(void);			//巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
-inline void twoOptRandom(void);			//ランダムな2点を選んで2-opt交換する関数
-inline bool twoOptPermission(int, int); //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void twoOptSwap(int, int);		//2-opt交換実行関数(引数:都市1,都市2)
-inline double sigmoid(double);			//シグモイド関数
-inline double calcZai(int, int);		//(3)式関数
-inline double calcEta(int, int);		//(4)式関数
-inline double calcDelta(int, int);		//(3)式のΔij関数
+void inputTSP(void);						  //TSPをedgeへ格納する関数
+void makeFirstTour(void);					  //初回巡回路をランダムに作成する関数
+inline int calcDistance(void);				  //巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
+inline void twoOptRandom(void);				  //ランダムな2点を選んで2-opt交換する関数
+inline bool twoOptPermission(int p1, int p2); //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void twoOptSwap(int p1, int p2);		  //2-opt交換実行関数(引数:都市1,都市2)
+void initialize(void);						  //TODO:時刻tの時の初期値
+inline double sigmoid(double x);			  //シグモイド関数
+inline double calcZai(int t, int i);		  //(3)式関数
+inline double calcEta(int t, int i);		  //(4)式関数
+inline int calcDelta(int i, int j);			  //(3)式のΔij関数
+inline double calcZeta(int t, int i);		  //(5)式関数
+inline double calcX(int t, int i);			  //(6)式関数
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -113,14 +118,11 @@ int main(int argc, char const *argv[])
 		}
 		out << endl;
 
-		for (int i = 0; i < CITY_NUM; i++)
+		for (int t = 0; t < CITY_NUM; t++)
 		{
-			for (int t = 0; t < T_TIMES; t++)
+			for (int i = 0; i < T_TIMES; i++)
 			{
-				//TODO:(3),(4),(5?),(6)
-				calcEta(i, t + 1);
-				calcZeta(i, t + 1);
-				calcZai(i, t + 1);
+				cnn[t].x[i] = calcX(t, i);
 			}
 		}
 	}
@@ -311,85 +313,94 @@ inline double sigmoid(double x)
 	return 1.0 / (1.0 + exp(-x / EPSILON));
 }
 
-inline double calcZai(int i, int t)
+inline double calcZai(int t, int i)
 {
-	// double max = 0.0;
-
-	// TODO:実装はDELTA＿IJができてから考える
-	// for (int j = 0; j < CITY_NUM; j++)
-	// {
-	// 	if ()
-	// 	{
-
-	// 	}
-
-	// }
-
-	// max = calcZeta(j,t);
-	// return max;
 	double max = 0.0;
-	bool isFirst = true; //初期max代入時に利用
+	bool isFirst = true;		//初期max代入時に利用
+	vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 	for (int j = 0; j < CITY_NUM; j++)
 	{
 		if (!(twoOptPermission(i, j)))
 		{
-			continue;
 		}
 		else
 		{
-			double sumZetaBetaDelta = calcZeta(i, t) + BETA * calcDelta(i, j);
+			double sumZetaBetaDelta = calcZeta(t, j) + BETA * calcDelta(i, j);
 			if (isFirst)
 			{
 				max = sumZetaBetaDelta;
 				isFirst = false;
 			}
-			if (max < sumZetaBetaDelta)
+			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
+				maxIJ.i = i;
+				maxIJ.j = j;
+			}
+			else
+			{
 			}
 		}
+		city = oldCity; //Δijの計算のたびにロールバック
 	}
 	return max;
 }
 
-inline double calcEta(int i, int t)
+inline double calcEta(int t, int i)
 {
+	t = t - 1;
 	double sum = 0.0;
-	for (int k = 0; k < CITY_NUM; k++)
+	for (int k = 0; k < CITY_NUM; k++) //kはiが0から始まるため、0でよい
 	{
 		if (k != i)
 		{
-			//TODO:Xk(t)がわからない
-			sum += cnn[i].x[t];
+			sum += cnn[t].x[k];
 		}
 	}
 	return -WEIGHT * sum + WEIGHT;
 }
 
-inline double calcZeta(int i, int t)
+inline double calcZeta(int t, int i)
 {
+	t = t - 1;
 	double sum = 0.0;
 
 	for (int d = 0; d <= t; d++)
 	{
-		sum += pow(KR, d) * cnn[i].x[t - d];
+		sum += pow(KR, d) * cnn[t - d].x[i];
 	}
 
 	return -ALPHA * sum + THETA;
 }
 
-inline double calcDelta(int i, int j)
+inline int calcDelta(int i, int j)
 {
 	if (twoOptPermission(i, j))
 	{
 		//TODO:
-		double difference = 0.0;
-
-		return difference;
+		int oldDistance = 0,			  //i-j間の2-opt前巡回路コスト総計
+			newDistance = 0;			  //i-j間の2-opt後巡回路コスト総計
+		oldDistance = calcDistance();	  //swap前にコストを入れる
+		twoOptSwap(i, j);				  //swap
+		newDistance = calcDistance();	  //swap後のコストを入れる
+		return oldDistance - newDistance; //TODO:戻り値は？
 	}
 	else
 	{
 		cout << "ERROR:calcDelta twoOptPermission is false" << endl;
 		exit(0);
 	}
+}
+
+inline double calcX(int t, int i)
+{
+	cnn[t].eta[i] = calcEta(t, i);
+	cnn[t].zeta[i] = calcZeta(t, i);
+	cnn[t].zai[i] = calcZai(t, i);
+	return sigmoid(cnn[t].zai[i] + cnn[t].eta[i] + cnn[t].zeta[i]);
+}
+
+void initialize(void)
+{
+	//TODO:時刻tの時の初期値
 }
