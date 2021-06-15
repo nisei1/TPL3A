@@ -15,11 +15,11 @@ using namespace std;
 //TSP用定数宣言
 #define CITY_NUM 443 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
-#define ENABLE_TWO_OPT_RANDOM true //ランダム2-opt 有効= true ,無効 = false
-#define TWO_OPT_TIMES 10		   //2optで何回最小値を出すか,最小値を出すまでループで減らない
+#define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
+#define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define T_TIMES 100				  //TODO:時刻tがどこまでふえるのかわからないので宣言してみた定数
-#define ENABLE_CHAOS_SEARCH false //カオスサーチするか 有効= true ,無効 = false
+#define T_TIMES 10				 //TODO:時刻tがどこまでふえるのかわからないので宣言してみた定数
+#define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
 #define THETA 0.5
@@ -33,20 +33,26 @@ using namespace std;
 struct ChaosNN
 {
 	ChaosNN() : zai(CITY_NUM, 0.0) {}
-	vector<double> zai;
+	vector<double> zai;				  //ξ = zai とする。xiと書くのが一般的だがニューロンxの都市iの出力と混同しないようにするため。
+	ChaosNN() : eta(CITY_NUM, 0.0) {} //TODO:ここからvector<int> delta_j;までの宣言でエラーが出る
+	vector<double> eta;
 	ChaosNN() : zeta(CITY_NUM, 0.0) {}
 	vector<double> zeta;
-	ChaosNN() : eta(CITY_NUM, 0.0) {}
-	vector<double> eta;
 	ChaosNN() : x(CITY_NUM, 0.0) {}
 	vector<double> x;
+	ChaosNN() : delta_i(CITY_NUM, 0) {}
+	vector<int> delta_i; //時刻tニューロンiのときのiを格納する(TODO:必要ない気がするけど良い書き方が思い浮かばない)
+	ChaosNN() : delta_j(CITY_NUM, 0) {}
+	vector<int> delta_j; //時刻tニューロンiときのjを格納する
+						 // ChaosNN() : isMaxX(CITY_NUM, false) {}
+						 // vector<bool> isMaxX; //時刻tのニューロンx[i]が最大値かどうか
 };
 //Δijが最大にコストを下げた時のijを格納するための構造体
-struct MaxDelta_I_J
-{
-	int i;
-	int j;
-};
+// struct MaxDelta_I_J
+// {
+// 	int i;
+// 	int j;
+// };
 
 /***グローバル変数の宣言***/
 //2-optの時にも利用
@@ -60,7 +66,7 @@ random_device seed_gen;
 mt19937 engine(seed_gen() * t);
 //カオスサーチに利用
 vector<ChaosNN> cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
-MaxDelta_I_J maxIJ;			  //Δijが最大にコストを下げた時のijを格納
+// MaxDelta_I_J maxIJ;			  //Δijが最大にコストを下げた時のijを格納
 
 /***テンプレート関数の宣言***/
 void inputTSP(void);						  //TSPをedgeへ格納する関数
@@ -69,7 +75,7 @@ inline int calcDistance(void);				  //巡回路の総コスト計算関数(戻�
 inline void twoOptRandom(void);				  //ランダムな2点を選んで2-opt交換する関数
 inline bool twoOptPermission(int p1, int p2); //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
 inline void twoOptSwap(int p1, int p2);		  //2-opt交換実行関数(引数:都市1,都市2)
-void initialize(void);						  //TODO:時刻tの時の初期値
+void initializeChaosNN(void);				  //TODO:時刻tの時の初期値
 inline double sigmoid(double x);			  //シグモイド関数
 inline double calcZai(int t, int i);		  //(3)式関数
 inline double calcEta(int t, int i);		  //(4)式関数
@@ -118,15 +124,32 @@ int main(int argc, char const *argv[])
 		}
 		out << endl;
 
-		for (int t = 0; t < CITY_NUM; t++)
+		initializeChaosNN();
+		// double maxX = *max_element(cnn[0].x.begin(), cnn[0].x.end()); //カオスニューロンの出力 x が最大のものを格納	初期値は時刻t = 0のときのxの最大値
+		// ChaosNN maxCNN;	//xが最大のときのCNN
+		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
-			for (int i = 0; i < T_TIMES; i++)
+			double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
+			int max_i = 0;	   //最大値だったxの要素番号を格納
+			for (int i = 0; i < CITY_NUM; i++)
 			{
 				cnn[t].x[i] = calcX(t, i);
+				if (maxX <= cnn[t].x[i])
+				{
+					maxX = cnn[t].x[i];
+					max_i = i;
+				}
 			}
+			twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行 -> 最終的な最適化
+
+			// cnn[t].isMaxX[max_i] = true;
+
+			//コストを出力
+			int distance = calcDistance();
+			out << "debug:After Chaos Search Total Distance:\t" << distance << endl
+				<< "debug:Remaining 2opt times:\t" << T_TIMES - t + 1 << endl;
 		}
 	}
-
 	return 0;
 }
 
@@ -245,7 +268,6 @@ inline bool twoOptPermission(int p1, int p2)
 	int range1, //繋ぎ変える前の2辺のコスト
 		range2; //繋ぎ変えた後の2辺のコスト
 
-	//TODO:whileの条件がわかりにくいからif文で書きたい
 	if (p1 > p2)
 	{
 		return false;
@@ -334,14 +356,13 @@ inline double calcZai(int t, int i)
 			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
-				maxIJ.i = i;
-				maxIJ.j = j;
+				cnn[t].delta_i[i] = i;
+				cnn[t].delta_j[i] = j;
+				// maxIJ.i = i;
+				// maxIJ.j = j;
 			}
-			else
-			{
-			}
+			city = oldCity; //Δijの計算のたびにロールバック
 		}
-		city = oldCity; //Δijの計算のたびにロールバック
 	}
 	return max;
 }
@@ -377,13 +398,12 @@ inline int calcDelta(int i, int j)
 {
 	if (twoOptPermission(i, j))
 	{
-		//TODO:
 		int oldDistance = 0,			  //i-j間の2-opt前巡回路コスト総計
 			newDistance = 0;			  //i-j間の2-opt後巡回路コスト総計
 		oldDistance = calcDistance();	  //swap前にコストを入れる
 		twoOptSwap(i, j);				  //swap
 		newDistance = calcDistance();	  //swap後のコストを入れる
-		return oldDistance - newDistance; //TODO:戻り値は？
+		return oldDistance - newDistance; //戻り値は削減されればプラスの値を取る
 	}
 	else
 	{
@@ -400,7 +420,18 @@ inline double calcX(int t, int i)
 	return sigmoid(cnn[t].zai[i] + cnn[t].eta[i] + cnn[t].zeta[i]);
 }
 
-void initialize(void)
+void initializeChaosNN(void)
 {
 	//TODO:時刻tの時の初期値
+	uniform_int_distribution<double> distr(0, 1);
+	for (int t = 0; t < T_TIMES; t++)
+	{
+		for (int i = 0; i < CITY_NUM; i++)
+		{
+			cnn[t].zai[i] = distr(engine);
+			cnn[t].eta[i] = distr(engine);
+			cnn[t].zeta[i] = distr(engine);
+			cnn[t].x[i] = sigmoid(cnn[t].zai[i] + cnn[t].eta[i] + cnn[t].zeta[i]);
+		}
+	}
 }
