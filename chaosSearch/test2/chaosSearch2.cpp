@@ -5,6 +5,7 @@
 #include <ctime>
 #include <random>
 #include <algorithm>
+//unko
 
 // using namespace std;	名前空間汚染を引き起こす禁じ手らしいので使わない
 
