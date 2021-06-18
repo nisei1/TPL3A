@@ -5,6 +5,7 @@
 #include <ctime>
 #include <random>
 #include <algorithm>
+#include <cmath>
 
 // using namespace std;	名前空間汚染を引き起こす禁じ手らしいので使わない
 
@@ -122,8 +123,8 @@ int main(int argc, char const *argv[])
 
 		//TODO:こっから正直良くわかってないまま書いている。多分間違っている
 		//TODO:Swapする条件を詳しくしりたい	現状はxの最大値だった都市ijをswap
-		//上記の問題点:xに格納される値がsigmoid関数により0か1となってしまうので、最大値の計算が1を取るxの最後の要素番号のxが決定されてしまう..
-		//また、現在巡回路cityのみをswapしているが、ニューロンx[i]とx[j]でswapしなくてよいのか？
+		//上記の問題点:xに格納される値がsigmoid関数により0か1となってしまうので、最大値の計算が1を取るxの最後の要素番号のxが決定されてしまう..	-> 上から１があり次第その都市でswapする
+		//また、現在巡回路cityのみをswapしているが、ニューロンx[i]とx[j]でswapしなくてよいのか？	-> 都市番号とニューロン番号を対応させること
 		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
 			double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
@@ -329,7 +330,7 @@ inline void twoOptSwap(int p1, int p2)
 
 inline double sigmoid(double x)
 {
-	return 1.0 / (1.0 + exp(-x / EPSILON));
+	return 1.0 / (1.0 + std::exp(-x / EPSILON));
 }
 
 inline double calcZai(int t, int i)
@@ -366,7 +367,7 @@ inline double calcZai(int t, int i)
 
 inline double calcEta(int t, int i)
 {
-	t = t - 1;
+	t = t - 1; //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
 	double sum = 0.0;
 	for (int k = 0; k < CITY_NUM; k++) //kはiが0から始まるため、0でよい
 	{
@@ -378,9 +379,9 @@ inline double calcEta(int t, int i)
 	return -WEIGHT * sum + WEIGHT;
 }
 
-inline double calcZeta(int t, int i)
+inline double calcZeta(int t, int i) //TODO:Zetaはdを含まない形で実装(7)
 {
-	t = t - 1;
+	t = t - 1; //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
 	double sum = 0.0;
 
 	for (int d = 0; d <= t; d++)
