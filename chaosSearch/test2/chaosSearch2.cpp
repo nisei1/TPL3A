@@ -10,15 +10,15 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_NAME "C:/Users/Owner/Desktop/TPL3A/TSP/rbg443a.txt" //読み込みたいTSP
-#define OUT_NAME "out.txt"									   //書き出したいファイル名
+#define IN_NAME "../../TSP/rbg443a.txt" //読み込みたいTSP
+#define OUT_NAME "out.txt"				//書き出したいファイル名
 //TSP用定数宣言
 #define CITY_NUM 443 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define T_TIMES 10				 //TODO:時刻tがどこまでふえるのかわからないので宣言してみた定数
+#define T_TIMES 10				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -120,7 +120,10 @@ int main(int argc, char const *argv[])
 
 		initializeChaosNN();
 
-		//TODO:こっから正直良くわかってないまま書いている。多分間違っている	
+		//TODO:こっから正直良くわかってないまま書いている。多分間違っている
+		//TODO:Swapする条件を詳しくしりたい	現状はxの最大値だった都市ijをswap
+		//上記の問題点:xに格納される値がsigmoid関数により0か1となってしまうので、最大値の計算が1を取るxの最後の要素番号のxが決定されてしまう..
+		//また、現在巡回路cityのみをswapしているが、ニューロンx[i]とx[j]でswapしなくてよいのか？
 		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
 			double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
@@ -319,7 +322,7 @@ inline void twoOptSwap(int p1, int p2)
 	}
 	else
 	{
-		std::cout << "ERROR:2-optSwap, Not twoOptPermission Point" << std::endl;
+		std::cout << "ERROR:2-optSwap, Not twoOptPermission Point" << std::endl; //TODO:実行するとここのエラーが出る
 		exit(0);
 	}
 }
@@ -416,7 +419,7 @@ inline double calcX(int t, int i)
 
 void initializeChaosNN(void)
 {
-	//TODO:時刻tの時の初期値	0~1の浮動小数点で初期化されていない。。。
+	//TODO:時刻tの時の初期値	xの初期値もその後の計算後も0か1にしかならない
 	std::uniform_real_distribution<> distr(0.0, 1.0);
 	for (int t = 0; t < T_TIMES; t++)
 	{
