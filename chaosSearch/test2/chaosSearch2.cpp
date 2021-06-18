@@ -6,12 +6,12 @@
 #include <random>
 #include <algorithm>
 
-using namespace std;
+// using namespace std;	名前空間汚染を引き起こす禁じ手らしいので使わない
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_NAME "../../TSP/rbg443a.txt" //読み込みたいTSP
-#define OUT_NAME "out.txt"				//書き出したいファイル名
+#define IN_NAME "C:/Users/Owner/Desktop/TPL3A/TSP/rbg443a.txt" //読み込みたいTSP
+#define OUT_NAME "out.txt"									   //書き出したいファイル名
 //TSP用定数宣言
 #define CITY_NUM 443 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
@@ -32,40 +32,34 @@ using namespace std;
 //カオスサーチ用の構造体
 struct ChaosNN
 {
-	ChaosNN() : zai(CITY_NUM, 0.0) {}
-	vector<double> zai;				  //ξ = zai とする。xiと書くのが一般的だがニューロンxの都市iの出力と混同しないようにするため。
-	ChaosNN() : eta(CITY_NUM, 0.0) {} //TODO:ここからvector<int> delta_j;までの宣言でエラーが出る
-	vector<double> eta;
-	ChaosNN() : zeta(CITY_NUM, 0.0) {}
-	vector<double> zeta;
-	ChaosNN() : x(CITY_NUM, 0.0) {}
-	vector<double> x;
-	ChaosNN() : delta_i(CITY_NUM, 0) {}
-	vector<int> delta_i; //時刻tニューロンiのときのiを格納する(TODO:必要ない気がするけど良い書き方が思い浮かばない)
-	ChaosNN() : delta_j(CITY_NUM, 0) {}
-	vector<int> delta_j; //時刻tニューロンiときのjを格納する
-						 // ChaosNN() : isMaxX(CITY_NUM, false) {}
-						 // vector<bool> isMaxX; //時刻tのニューロンx[i]が最大値かどうか
+	ChaosNN() : zai(CITY_NUM, 0.0),
+				eta(CITY_NUM, 0.0),
+				zeta(CITY_NUM, 0.0),
+				x(CITY_NUM, 0.0),
+				delta_i(CITY_NUM, 0),
+				delta_j(CITY_NUM, 0) {}
+	std::vector<double> zai; //ξ = zai とする。xiと書くのが一般的だがニューロンxの都市iの出力と混同しないようにするため。
+	std::vector<double> eta;
+	std::vector<double> zeta;
+	std::vector<double> x;
+	std::vector<int> delta_i; //時刻tニューロンiのときのiを格納する(TODO:必要ない気がするけど良い書き方が思い浮かばない)
+	std::vector<int> delta_j; //時刻tニューロンiときのjを格納する
+							  // ChaosNN() : isMaxX(CITY_NUM, false) {}
+							  // vector<bool> isMaxX; //時刻tのニューロンx[i]が最大値かどうか
 };
-//Δijが最大にコストを下げた時のijを格納するための構造体
-// struct MaxDelta_I_J
-// {
-// 	int i;
-// 	int j;
-// };
 
 /***グローバル変数の宣言***/
 //2-optの時にも利用
-vector<vector<int>> edge(CITY_NUM, vector<int>(CITY_NUM)); //TSPを表す2次元vector、例) 1 -> 2 のコストを要素へ記録 edge[0][1] = 1から2へ行くためのコスト格納
-vector<int> city;										   //巡回路用vector、edgeの要素番号へ入れるのに使用
-ofstream out(OUT_NAME);									   //ファイル出力用変数
-ifstream in(IN_NAME);									   //ファイル入力用変数
+std::vector<std::vector<int>> edge(CITY_NUM, std::vector<int>(CITY_NUM)); //TSPを表す2次元vector、例) 1 -> 2 のコストを要素へ記録 edge[0][1] = 1から2へ行くためのコスト格納
+std::vector<int> city;													  //巡回路用vector、edgeの要素番号へ入れるのに使用
+std::ofstream out(OUT_NAME);											  //ファイル出力用変数
+std::ifstream in(IN_NAME);												  //ファイル入力用変数
 //ランダム用儀式
 time_t t = time(NULL);
-random_device seed_gen;
-mt19937 engine(seed_gen() * t);
+std::random_device seed_gen;
+std::mt19937 engine(seed_gen() * t);
 //カオスサーチに利用
-vector<ChaosNN> cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
+std::vector<ChaosNN> cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
 // MaxDelta_I_J maxIJ;			  //Δijが最大にコストを下げた時のijを格納
 
 /***テンプレート関数の宣言***/
@@ -88,32 +82,32 @@ int main(int argc, char const *argv[])
 {
 	inputTSP();
 
-	if (ENABLE_TWO_OPT_RANDOM)
-	{
-		out << "EnableTwoOptRandom" << endl;
-		makeFirstTour();
-		//最適化前に巡回路出力
-		out << "<before>\t";
-		for (auto i : city)
-		{
-			out << city.at(i) + 1 << " ";
-		}
-		out << endl;
+	// if (ENABLE_TWO_OPT_RANDOM)
+	// {
+	// 	out << "EnableTwoOptRandom" << std::endl;
+	// 	makeFirstTour();
+	// 	//最適化前に巡回路出力
+	// 	out << "<before>\t";
+	// 	for (auto i : city)
+	// 	{
+	// 		out << city.at(i) + 1 << " ";
+	// 	}
+	// 	out << std::endl;
 
-		twoOptRandom();
+	// 	twoOptRandom();
 
-		//最適化後に巡回路出力
-		out << "<After>\t";
-		for (auto i : city)
-		{
-			out << city.at(i) + 1 << " ";
-		}
-		out << endl;
-	}
+	// 	//最適化後に巡回路出力
+	// 	out << "<After>\t";
+	// 	for (auto i : city)
+	// 	{
+	// 		out << city.at(i) + 1 << " ";
+	// 	}
+	// 	out << std::endl;
+	// }
 
 	if (ENABLE_CHAOS_SEARCH)
 	{
-		out << "EnableChaosSearch" << endl;
+		out << "EnableChaosSearch" << std::endl;
 		makeFirstTour();
 
 		//最適化前に巡回路出力
@@ -122,11 +116,11 @@ int main(int argc, char const *argv[])
 		{
 			out << city.at(i) + 1 << " ";
 		}
-		out << endl;
+		out << std::endl;
 
 		initializeChaosNN();
-		// double maxX = *max_element(cnn[0].x.begin(), cnn[0].x.end()); //カオスニューロンの出力 x が最大のものを格納	初期値は時刻t = 0のときのxの最大値
-		// ChaosNN maxCNN;	//xが最大のときのCNN
+
+		//TODO:こっから正直良くわかってないまま書いている。多分間違っている	
 		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
 			double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
@@ -140,14 +134,14 @@ int main(int argc, char const *argv[])
 					max_i = i;
 				}
 			}
-			twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行 -> 最終的な最適化
+			twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //多分間違い(時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行? -> 最終的な最適化??)
 
 			// cnn[t].isMaxX[max_i] = true;
 
 			//コストを出力
 			int distance = calcDistance();
-			out << "debug:After Chaos Search Total Distance:\t" << distance << endl
-				<< "debug:Remaining 2opt times:\t" << T_TIMES - t + 1 << endl;
+			out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
+				<< "debug:Remaining 2opt times:\t" << T_TIMES - t + 1 << std::endl;
 		}
 	}
 	return 0;
@@ -159,13 +153,13 @@ void inputTSP(void)
 	int d1, d2, x;
 	if (in.fail())
 	{
-		cerr << "Cannot open file\n";
+		std::cerr << "inputTSP:Cannot open file\n";
 		exit(0);
 	}
-	string str;
+	std::string str;
 	while (getline(in, str)) //txtの中身一行ずつループ
 	{
-		stringstream ss(str);
+		std::stringstream ss(str);
 		ss >> d1 >> d2 >> x;	  //1行に空白が入る度、入れる変数が変わる
 		edge[d1 - 1][d2 - 1] = x; //TSPを表す2次元vectorへ格納、例) 1 -> 2 のコストを要素へ記録 edge[0][1] = 1から2へ行くためのコスト格納
 	}
@@ -179,10 +173,10 @@ void inputTSP(void)
 				<< "[" << j << "]"
 				<< "="
 				<< " "
-				<< edge.at(i).at(j) << endl;
+				<< edge.at(i).at(j) << std::endl;
 		}
 	}
-	out << endl;
+	out << std::endl;
 }
 
 //初回巡回路をランダムに作成する関数
@@ -225,8 +219,8 @@ inline void twoOptRandom(void)
 {
 	int times = TWO_OPT_TIMES; //2optで何回最小値を出すか,最小値を出すまでループで減らない
 	//2opt用2点ランダム生成範囲
-	uniform_int_distribution<> dist1(0, CITY_NUM - 1);
-	uniform_int_distribution<> dist2(0, CITY_NUM - 1);
+	std::uniform_int_distribution<> dist1(0, CITY_NUM - 1);
+	std::uniform_int_distribution<> dist2(0, CITY_NUM - 1);
 
 	do
 	{
@@ -238,7 +232,7 @@ inline void twoOptRandom(void)
 			r2 = dist2(engine); //ランダム生成点2
 		} while (!(twoOptPermission(r1, r2)));
 
-		vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
+		std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 
 		int distance1 = calcDistance(); //合計距離比較用変数1
 
@@ -254,8 +248,8 @@ inline void twoOptRandom(void)
 		}
 		else //小さいまたは同じコストの場合、現在のコストを出力し、残り2opt回数を減らす
 		{
-			out << "debug:After 2opt Total Distance:\t" << distance2 << endl
-				<< "debug:Remaining 2opt times:\t" << TWO_OPT_TIMES - times + 1 << endl;
+			out << "debug:After 2opt Total Distance:\t" << distance2 << std::endl
+				<< "debug:Remaining 2opt times:\t" << TWO_OPT_TIMES - times + 1 << std::endl;
 
 			times--;
 		}
@@ -320,12 +314,12 @@ inline void twoOptSwap(int p1, int p2)
 
 		while (swapP1 < swapP2)
 		{
-			swap(city[swapP1++], city[swapP2--]);
+			std::swap(city[swapP1++], city[swapP2--]);
 		}
 	}
 	else
 	{
-		cout << "ERROR:2-optSwap, Not twoOptPermission Point" << endl;
+		std::cout << "ERROR:2-optSwap, Not twoOptPermission Point" << std::endl;
 		exit(0);
 	}
 }
@@ -338,8 +332,8 @@ inline double sigmoid(double x)
 inline double calcZai(int t, int i)
 {
 	double max = 0.0;
-	bool isFirst = true;		//初期max代入時に利用
-	vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
+	bool isFirst = true;			 //初期max代入時に利用
+	std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 	for (int j = 0; j < CITY_NUM; j++)
 	{
 		if (!(twoOptPermission(i, j)))
@@ -407,7 +401,7 @@ inline int calcDelta(int i, int j)
 	}
 	else
 	{
-		cout << "ERROR:calcDelta twoOptPermission is false" << endl;
+		std::cout << "ERROR:calcDelta twoOptPermission is false" << std::endl;
 		exit(0);
 	}
 }
@@ -422,8 +416,8 @@ inline double calcX(int t, int i)
 
 void initializeChaosNN(void)
 {
-	//TODO:時刻tの時の初期値
-	uniform_int_distribution<double> distr(0, 1);
+	//TODO:時刻tの時の初期値	0~1の浮動小数点で初期化されていない。。。
+	std::uniform_real_distribution<> distr(0.0, 1.0);
 	for (int t = 0; t < T_TIMES; t++)
 	{
 		for (int i = 0; i < CITY_NUM; i++)
