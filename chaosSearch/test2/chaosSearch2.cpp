@@ -127,18 +127,23 @@ int main(int argc, char const *argv[])
 		//また、現在巡回路cityのみをswapしているが、ニューロンx[i]とx[j]でswapしなくてよいのか？	-> 都市番号とニューロン番号を対応させること
 		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
-			double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
-			int max_i = 0;	   //最大値だったxの要素番号を格納
+			// double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
+			// int max_i = 0;	   //最大値だったxの要素番号を格納
 			for (int i = 0; i < CITY_NUM; i++)
 			{
 				cnn[t].x[i] = calcX(t, i);
-				if (maxX <= cnn[t].x[i])
+
+				if (cnn[t].x[i] >= 0.5)
 				{
-					maxX = cnn[t].x[i];
-					max_i = i;
+					twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
 				}
+				// if (maxX <= cnn[t].x[i])
+				// {
+				// 	maxX = cnn[t].x[i];
+				// 	max_i = i;
+				// }
 			}
-			twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //多分間違い(時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行? -> 最終的な最適化??)
+			// twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //多分間違い(時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行? -> 最終的な最適化??)
 
 			// cnn[t].isMaxX[max_i] = true;
 
@@ -338,14 +343,32 @@ inline double calcZai(int t, int i)
 	double max = 0.0;
 	bool isFirst = true;			 //初期max代入時に利用
 	std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
+	int cityIndex_i = 0;			 //都市番号とニューロン番号を一致させるため、for文でcity[]の中身とiが一致->都市番号iとニューロン番号iが一致した時のcity[]の要素番号を格納(もっと効率良い方法ありそう)
+	int cityIndex_j = 0;
+	for (int k = 0; k < city.size(); k++)
+	{
+		if (city[k] == i)
+		{
+			cityIndex_i = i;
+		}
+	}
+
 	for (int j = 0; j < CITY_NUM; j++)
 	{
-		if (!(twoOptPermission(i, j)))
+		for (int k = 0; k < city.size(); k++)
+		{
+			if (city[k] == j)
+			{
+				cityIndex_j = j;
+			}
+		}
+
+		if (!(twoOptPermission(cityIndex_i, cityIndex_j)))
 		{
 		}
 		else
 		{
-			double sumZetaBetaDelta = calcZeta(t, j) + BETA * calcDelta(i, j);
+			double sumZetaBetaDelta = calcZeta(t, j) + BETA * calcDelta(cityIndex_i, cityIndex_j);
 			if (isFirst)
 			{
 				max = sumZetaBetaDelta;
@@ -354,8 +377,8 @@ inline double calcZai(int t, int i)
 			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
-				cnn[t].delta_i[i] = i;
-				cnn[t].delta_j[i] = j;
+				cnn[t].delta_i[i] = cityIndex_i;
+				cnn[t].delta_j[i] = cityIndex_j;
 				// maxIJ.i = i;
 				// maxIJ.j = j;
 			}
@@ -381,15 +404,17 @@ inline double calcEta(int t, int i)
 
 inline double calcZeta(int t, int i) //TODO:Zetaはdを含まない形で実装(7)
 {
-	t = t - 1; //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
-	double sum = 0.0;
+	t = t - 1;												  //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
+	return (KR * cnn[t].zeta[i]) - (ALPHA * cnn[t].x[i]) + R; //(7)に変更 TODO:要確認
 
-	for (int d = 0; d <= t; d++)
-	{
-		sum += pow(KR, d) * cnn[t - d].x[i];
-	}
+	// double sum = 0.0;
 
-	return -ALPHA * sum + THETA;
+	// for (int d = 0; d <= t; d++)
+	// {
+	// 	sum += pow(KR, d) * cnn[t - d].x[i];
+	// }
+
+	// return -ALPHA * sum + THETA;
 }
 
 inline int calcDelta(int i, int j)
