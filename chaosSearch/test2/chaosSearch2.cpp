@@ -349,7 +349,7 @@ inline double calcZai(int t, int i)
 	{
 		if (city[k] == i)
 		{
-			cityIndex_i = i;
+			cityIndex_i = k;
 		}
 	}
 
@@ -359,7 +359,7 @@ inline double calcZai(int t, int i)
 		{
 			if (city[k] == j)
 			{
-				cityIndex_j = j;
+				cityIndex_j = k;
 			}
 		}
 
