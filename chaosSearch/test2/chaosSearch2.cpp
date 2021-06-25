@@ -139,7 +139,7 @@ int main(int argc, char const *argv[])
 						<< " i = " << i
 						<< " point = " << cnn[t].delta_i[i] << " " << cnn[t].delta_j[i]
 						<< std::endl;
-					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i]))
+					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i]))	//TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
 					{
 						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
 						int distance = calcDistance();
@@ -147,7 +147,7 @@ int main(int argc, char const *argv[])
 					}
 					else
 					{
-						out << "main twoOptPermission false" << std::endl;
+						out << "debug:main twoOptPermission false" << std::endl;
 					}
 
 					// twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
