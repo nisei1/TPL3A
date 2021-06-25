@@ -11,10 +11,10 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_NAME "../../TSP/rbg443a.txt" //読み込みたいTSP
-#define OUT_NAME "out.txt"				//書き出したいファイル名
+#define IN_NAME "../../TSP/br17a.txt" //読み込みたいTSP
+#define OUT_NAME "out.txt"			  //書き出したいファイル名
 //TSP用定数宣言
-#define CITY_NUM 443 //TSPの都市数
+#define CITY_NUM 17 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
@@ -135,7 +135,31 @@ int main(int argc, char const *argv[])
 
 				if (cnn[t].x[i] >= 0.5)
 				{
-					twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
+					out << "debug: main twoOptSwap t = " << t
+						<< " i = " << i
+						<< " point = " << cnn[t].delta_i[i] << " " << cnn[t].delta_j[i]
+						<< std::endl;
+					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i]))
+					{
+						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
+						int distance = calcDistance();
+						out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
+							<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
+					}
+					else
+					{
+						out << "main twoOptPermission false" << std::endl;
+					}
+
+					// twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
+
+					// int distance = calcDistance();
+					// out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
+					// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
+				}
+				else
+				{
+					continue;
 				}
 				// if (maxX <= cnn[t].x[i])
 				// {
@@ -147,10 +171,10 @@ int main(int argc, char const *argv[])
 
 			// cnn[t].isMaxX[max_i] = true;
 
-			//コストを出力
-			int distance = calcDistance();
-			out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
-				<< "debug:Remaining 2opt times:\t" << T_TIMES - t + 1 << std::endl;
+			// //コストを出力
+			// int distance = calcDistance();
+			// out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
+			// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
 		}
 	}
 	return 0;
@@ -341,17 +365,20 @@ inline double sigmoid(double x)
 inline double calcZai(int t, int i)
 {
 	double max = 0.0;
-	bool isFirst = true;			 //初期max代入時に利用
-	std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
-	int cityIndex_i = 0;			 //都市番号とニューロン番号を一致させるため、for文でcity[]の中身とiが一致->都市番号iとニューロン番号iが一致した時のcity[]の要素番号を格納(もっと効率良い方法ありそう)
+	bool isFirst = true; //初期max代入時に利用
+	// std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
+	int cityIndex_i = 0; //都市番号とニューロン番号を一致させるため、for文でcity[]の中身とiが一致->都市番号iとニューロン番号iが一致した時のcity[]の要素番号を格納(もっと効率良い方法ありそう)
 	int cityIndex_j = 0;
 	for (int k = 0; k < city.size(); k++)
 	{
 		if (city[k] == i)
 		{
 			cityIndex_i = k;
+			break;
 		}
 	}
+
+	cnn[t].delta_i[i] = cityIndex_i;
 
 	for (int j = 0; j < CITY_NUM; j++)
 	{
@@ -360,11 +387,13 @@ inline double calcZai(int t, int i)
 			if (city[k] == j)
 			{
 				cityIndex_j = k;
+				break;
 			}
 		}
 
 		if (!(twoOptPermission(cityIndex_i, cityIndex_j)))
 		{
+			continue;
 		}
 		else
 		{
@@ -372,17 +401,17 @@ inline double calcZai(int t, int i)
 			if (isFirst)
 			{
 				max = sumZetaBetaDelta;
+				cnn[t].delta_j[i] = cityIndex_j;
 				isFirst = false;
 			}
 			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
-				cnn[t].delta_i[i] = cityIndex_i;
 				cnn[t].delta_j[i] = cityIndex_j;
 				// maxIJ.i = i;
 				// maxIJ.j = j;
 			}
-			city = oldCity; //Δijの計算のたびにロールバック
+			// city = oldCity; //Δijの計算のたびにロールバック
 		}
 	}
 	return max;
@@ -421,11 +450,13 @@ inline int calcDelta(int i, int j)
 {
 	if (twoOptPermission(i, j))
 	{
+		std::vector<int> oldCity = city;  //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 		int oldDistance = 0,			  //i-j間の2-opt前巡回路コスト総計
 			newDistance = 0;			  //i-j間の2-opt後巡回路コスト総計
 		oldDistance = calcDistance();	  //swap前にコストを入れる
 		twoOptSwap(i, j);				  //swap
 		newDistance = calcDistance();	  //swap後のコストを入れる
+		city = oldCity;					  //Δijの計算のたびにロールバック
 		return oldDistance - newDistance; //戻り値は削減されればプラスの値を取る
 	}
 	else
