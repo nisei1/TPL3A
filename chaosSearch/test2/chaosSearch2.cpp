@@ -143,8 +143,7 @@ int main(int argc, char const *argv[])
 					{
 						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
 						int distance = calcDistance();
-						out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
-							<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
+						out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl;
 					}
 					else
 					{
@@ -175,6 +174,7 @@ int main(int argc, char const *argv[])
 			// int distance = calcDistance();
 			// out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
 			// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
+			out << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
 		}
 	}
 	return 0;
@@ -403,17 +403,22 @@ inline double calcZai(int t, int i)
 				max = sumZetaBetaDelta;
 				cnn[t].delta_j[i] = cityIndex_j;
 				isFirst = false;
+				out << "debug: calcZai First i = " << i
+					<< " j = " << j
+					<< std::endl;
 			}
 			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
 				cnn[t].delta_j[i] = cityIndex_j;
-				// maxIJ.i = i;
-				// maxIJ.j = j;
+				out << "debug: calcZai i = " << i
+					<< " j = " << j
+					<< std::endl;
 			}
 			// city = oldCity; //Δijの計算のたびにロールバック
 		}
 	}
+
 	return max;
 }
 

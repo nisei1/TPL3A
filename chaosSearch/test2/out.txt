@@ -289,38 +289,4 @@ data[16][15]= 8
 data[16][16]= 0
 
 EnableChaosSearch
-<before>	1 2 15 12 10 6 5 14 9 13 11 4 17 8 7 16 3 
-debug: main twoOptSwap t = 1 i = 0 point = 0 10
-debug:After Chaos Search Total Distance:	257
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 3 point = 4 6
-debug:After Chaos Search Total Distance:	227
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 5 point = 5 15
-debug:After Chaos Search Total Distance:	189
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 7 point = 10 16
-debug:After Chaos Search Total Distance:	160
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 10 point = 6 14
-debug:After Chaos Search Total Distance:	158
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 14 point = 2 5
-debug:After Chaos Search Total Distance:	142
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 1 i = 16 point = 9 11
-debug:After Chaos Search Total Distance:	128
-debug:Remaining t times:	10
-debug: main twoOptSwap t = 2 i = 0 point = 0 8
-debug:After Chaos Search Total Distance:	109
-debug:Remaining t times:	9
-debug: main twoOptSwap t = 2 i = 1 point = 4 15
-debug:After Chaos Search Total Distance:	68
-debug:Remaining t times:	9
-debug: main twoOptSwap t = 2 i = 12 point = 6 16
-debug:After Chaos Search Total Distance:	65
-debug:Remaining t times:	9
-debug: main twoOptSwap t = 3 i = 8 point = 7 13
-debug:After Chaos Search Total Distance:	41
-debug:Remaining t times:	8
-debug: main twoOptSwap t = 5 i = 6 point = 15 0
+<before>	12 6 13 8 17 7 11 4 10 2 15 1 14 3 5 16 9 
