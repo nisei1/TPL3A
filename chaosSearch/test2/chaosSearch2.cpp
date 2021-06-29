@@ -19,7 +19,7 @@
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define T_TIMES 1000			 //時刻tがどこまで増やすのか適当に決めてよい
+#define T_TIMES 10000			 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -70,13 +70,14 @@ inline int calcDistance(void);				  //巡回路の総コスト計算関数(戻�
 inline void twoOptRandom(void);				  //ランダムな2点を選んで2-opt交換する関数
 inline bool twoOptPermission(int p1, int p2); //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
 inline void twoOptSwap(int p1, int p2);		  //2-opt交換実行関数(引数:都市1,都市2)
-void initializeChaosNN(void);				  //TODO:時刻tの時の初期値
-inline double sigmoid(double x);			  //シグモイド関数
-inline double calcZai(int t, int i);		  //(3)式関数
-inline double calcEta(int t, int i);		  //(4)式関数
-inline int calcDelta(int i, int j);			  //(3)式のΔij関数
-inline double calcZeta(int t, int i);		  //(5)式関数
-inline double calcX(int t, int i);			  //(6)式関数
+inline bool swapPermission(int p1, int p2);
+void initializeChaosNN(void);		  //TODO:時刻tの時の初期値
+inline double sigmoid(double x);	  //シグモイド関数
+inline double calcZai(int t, int i);  //(3)式関数
+inline double calcEta(int t, int i);  //(4)式関数
+inline int calcDelta(int i, int j);	  //(3)式のΔij関数
+inline double calcZeta(int t, int i); //(5)式関数
+inline double calcX(int t, int i);	  //(6)式関数
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -139,7 +140,7 @@ int main(int argc, char const *argv[])
 					// 	<< " i = " << i
 					// 	<< " cnn[t].delta_i[i] " << cnn[t].delta_i[i] << " cnn[t].delta_j[i] = " << cnn[t].delta_j[i]
 					// 	<< std::endl;
-					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i])) //TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
+					if (swapPermission(cnn[t].delta_i[i], cnn[t].delta_j[i])) //TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
 					{
 						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
 						int distance = calcDistance();
@@ -147,7 +148,7 @@ int main(int argc, char const *argv[])
 					}
 					else
 					{
-						out << "debug:ERROR main twoOptPermission false" << std::endl
+						out << "debug:ERROR main swapPermission false" << std::endl
 							<< "t = " << t
 							<< ", i = " << i << std::endl
 							<< "cnn[t].delta_i[i] = " << cnn[t].delta_i[i] << ", cnn[t].delta_j[i] = " << cnn[t].delta_j[i] << std::endl
@@ -345,10 +346,37 @@ inline bool twoOptPermission(int p1, int p2)
 	}
 }
 
+inline bool swapPermission(int p1, int p2)
+{
+	if (abs(p2 - p1) <= 1)
+	{
+		return false;
+	}
+	else if (p1 == 0 && p2 == CITY_NUM - 1)
+	{
+		return false;
+	}
+	else if (p1 == CITY_NUM - 1 && p2 == 0)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
 inline void twoOptSwap(int p1, int p2)
 {
-	if (twoOptPermission(p1, p2))
+	if (swapPermission(p1, p2))
 	{
+		if (p1 > p2)
+		{
+			int temp = p1;
+			p1 = p2;
+			p2 = temp;
+		}
+
 		int swapP1 = p1 + 1,
 			swapP2 = p2;
 
@@ -359,7 +387,7 @@ inline void twoOptSwap(int p1, int p2)
 	}
 	else
 	{
-		std::cout << "ERROR:2-optSwap, Not twoOptPermission Point" << std::endl; //TODO:実行するとここのエラーが出る
+		std::cout << "ERROR:2-optSwap, Not swapPermission Point" << std::endl; //TODO:実行するとここのエラーが出る
 		exit(0);
 	}
 }
@@ -376,7 +404,7 @@ inline double calcZai(int t, int i)
 	// std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 	int cityIndex_i = 0; //都市番号とニューロン番号を一致させるため、for文でcity[]の中身とiが一致->都市番号iとニューロン番号iが一致した時のcity[]の要素番号を格納(もっと効率良い方法ありそう)
 	int cityIndex_j = 0;
-	for (int k = 0; k < city.size(); k++)
+	for (int k = 0; k < CITY_NUM; k++)
 	{
 		if (city[k] == i)
 		{
@@ -389,7 +417,7 @@ inline double calcZai(int t, int i)
 
 	for (int j = 0; j < CITY_NUM; j++)
 	{
-		for (int k = 0; k < city.size(); k++)
+		for (int k = 0; k < CITY_NUM; k++)
 		{
 			if (city[k] == j)
 			{
@@ -398,7 +426,7 @@ inline double calcZai(int t, int i)
 			}
 		}
 
-		if (!(twoOptPermission(cityIndex_i, cityIndex_j)))
+		if (!(swapPermission(cityIndex_i, cityIndex_j)))
 		{
 			continue;
 		}
@@ -411,7 +439,11 @@ inline double calcZai(int t, int i)
 				cnn[t].delta_j[i] = cityIndex_j;
 				isFirst = false;
 				out << "debug: calcZai First i = " << i
-					<< " j = " << j
+					<< " j = " << j << std::endl
+					<< "city[cityIndex_i] = " << city[cityIndex_i]
+					<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
+					<< "cityIndex_i = " << cityIndex_i
+					<< " cityIndex_j = " << cityIndex_j
 					<< std::endl;
 			}
 			else if (max <= sumZetaBetaDelta)
@@ -419,7 +451,11 @@ inline double calcZai(int t, int i)
 				max = sumZetaBetaDelta;
 				cnn[t].delta_j[i] = cityIndex_j;
 				out << "debug: calcZai i = " << i
-					<< " j = " << j
+					<< " j = " << j << std::endl
+					<< "city[cityIndex_i] = " << city[cityIndex_i]
+					<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
+					<< "cityIndex_i = " << cityIndex_i
+					<< " cityIndex_j = " << cityIndex_j
 					<< std::endl;
 			}
 			// city = oldCity; //Δijの計算のたびにロールバック
@@ -460,7 +496,7 @@ inline double calcZeta(int t, int i) //TODO:Zetaはdを含まない形で実装(
 
 inline int calcDelta(int i, int j)
 {
-	if (twoOptPermission(i, j))
+	if (swapPermission(i, j))
 	{
 		std::vector<int> oldCity = city;  //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 		int oldDistance = 0,			  //i-j間の2-opt前巡回路コスト総計
@@ -473,7 +509,7 @@ inline int calcDelta(int i, int j)
 	}
 	else
 	{
-		std::cout << "ERROR:calcDelta twoOptPermission is false" << std::endl;
+		std::cout << "ERROR:calcDelta swapPermission is false" << std::endl;
 		exit(0);
 	}
 }

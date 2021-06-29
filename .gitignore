@@ -33,3 +33,6 @@
 
 #.vscodeを除外
 .vscode
+
+#out.txtを除外
+*.txt
