@@ -11,15 +11,15 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_NAME "../../TSP/br17a.txt" //読み込みたいTSP
-#define OUT_NAME "out.txt"			  //書き出したいファイル名
+#define IN_NAME "../../TSP/p43a.txt" //読み込みたいTSP
+#define OUT_NAME "out.txt"			 //書き出したいファイル名
 //TSP用定数宣言
-#define CITY_NUM 17 //TSPの都市数
+#define CITY_NUM 43 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define T_TIMES 10				 //時刻tがどこまで増やすのか適当に決めてよい
+#define T_TIMES 1000			 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -135,11 +135,11 @@ int main(int argc, char const *argv[])
 
 				if (cnn[t].x[i] >= 0.5)
 				{
-					out << "debug: main twoOptSwap t = " << t
-						<< " i = " << i
-						<< " point = " << cnn[t].delta_i[i] << " " << cnn[t].delta_j[i]
-						<< std::endl;
-					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i]))	//TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
+					// out << "debug: main twoOptSwap t = " << t
+					// 	<< " i = " << i
+					// 	<< " cnn[t].delta_i[i] " << cnn[t].delta_i[i] << " cnn[t].delta_j[i] = " << cnn[t].delta_j[i]
+					// 	<< std::endl;
+					if (twoOptPermission(cnn[t].delta_i[i], cnn[t].delta_j[i])) //TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
 					{
 						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
 						int distance = calcDistance();
@@ -147,7 +147,12 @@ int main(int argc, char const *argv[])
 					}
 					else
 					{
-						out << "debug:main twoOptPermission false" << std::endl;
+						out << "debug:ERROR main twoOptPermission false" << std::endl
+							<< "t = " << t
+							<< ", i = " << i << std::endl
+							<< "cnn[t].delta_i[i] = " << cnn[t].delta_i[i] << ", cnn[t].delta_j[i] = " << cnn[t].delta_j[i] << std::endl
+							<< "city[cnn[t].delta_i[i]] = " << city[cnn[t].delta_i[i]] << ", city[cnn[t].delta_j[i]] = " << city[cnn[t].delta_j[i]]
+							<< std::endl;
 					}
 
 					// twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
@@ -176,6 +181,8 @@ int main(int argc, char const *argv[])
 			// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
 			out << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
 		}
+		int distance = calcDistance();
+		out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl;
 	}
 	return 0;
 }
@@ -198,18 +205,18 @@ void inputTSP(void)
 	}
 
 	//入力されたデータを一旦出力
-	for (int i = 0; i < CITY_NUM; i++)
-	{
-		for (int j = 0; j < CITY_NUM; j++)
-		{
-			out << "data[" << i << "]"
-				<< "[" << j << "]"
-				<< "="
-				<< " "
-				<< edge.at(i).at(j) << std::endl;
-		}
-	}
-	out << std::endl;
+	// for (int i = 0; i < CITY_NUM; i++)
+	// {
+	// 	for (int j = 0; j < CITY_NUM; j++)
+	// 	{
+	// 		out << "data[" << i << "]"
+	// 			<< "[" << j << "]"
+	// 			<< "="
+	// 			<< " "
+	// 			<< edge.at(i).at(j) << std::endl;
+	// 	}
+	// }
+	// out << std::endl;
 }
 
 //初回巡回路をランダムに作成する関数
