@@ -7,19 +7,17 @@
 #include <algorithm>
 #include <cmath>
 
-// using namespace std;	名前空間汚染を引き起こす禁じ手らしいので使わない
-
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_NAME "../../TSP/p43a.txt" //読み込みたいTSP
-#define OUT_NAME "out.txt"			 //書き出したいファイル名
+#define IN_NAME "../../TSP/rbg443a.txt" //読み込みたいTSP
+#define OUT_NAME "out.txt"				//書き出したいファイル名
 //TSP用定数宣言
-#define CITY_NUM 43 //TSPの都市数
+#define CITY_NUM 443 //TSPの都市数
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define T_TIMES 10000			 //時刻tがどこまで増やすのか適当に決めてよい
+#define T_TIMES 10				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -68,44 +66,44 @@ void inputTSP(void);						  //TSPをedgeへ格納する関数
 void makeFirstTour(void);					  //初回巡回路をランダムに作成する関数
 inline int calcDistance(void);				  //巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
 inline void twoOptRandom(void);				  //ランダムな2点を選んで2-opt交換する関数
-inline bool twoOptPermission(int p1, int p2); //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void twoOptSwap(int p1, int p2);		  //2-opt交換実行関数(引数:都市1,都市2)
-inline bool swapPermission(int p1, int p2);
-void initializeChaosNN(void);		  //TODO:時刻tの時の初期値
-inline double sigmoid(double x);	  //シグモイド関数
-inline double calcZai(int t, int i);  //(3)式関数
-inline double calcEta(int t, int i);  //(4)式関数
-inline int calcDelta(int i, int j);	  //(3)式のΔij関数
-inline double calcZeta(int t, int i); //(5)式関数
-inline double calcX(int t, int i);	  //(6)式関数
+inline bool twoOptPermission(int p1, int p2); //ランダム2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void twoOptSwap(int p1, int p2);		  //ランダム2-opt交換実行関数(引数:都市1,都市2)
+inline bool swapPermission(int p1, int p2);	  //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+void initializeChaosNN(void);				  //時刻tの時の初期値
+inline double sigmoid(double x);			  //シグモイド関数
+inline double calcZai(int t, int i);		  //(3)式関数
+inline double calcEta(int t, int i);		  //(4)式関数
+inline int calcDelta(int i, int j);			  //(3)式のΔij関数
+inline double calcZeta(int t, int i);		  //(5)式関数
+inline double calcX(int t, int i);			  //(6)式関数
 
 /***main関数***/
 int main(int argc, char const *argv[])
 {
 	inputTSP();
 
-	// if (ENABLE_TWO_OPT_RANDOM)
-	// {
-	// 	out << "EnableTwoOptRandom" << std::endl;
-	// 	makeFirstTour();
-	// 	//最適化前に巡回路出力
-	// 	out << "<before>\t";
-	// 	for (auto i : city)
-	// 	{
-	// 		out << city.at(i) + 1 << " ";
-	// 	}
-	// 	out << std::endl;
+	if (ENABLE_TWO_OPT_RANDOM)
+	{
+		out << "EnableTwoOptRandom" << std::endl;
+		makeFirstTour();
+		//最適化前に巡回路出力
+		out << "<before>\t";
+		for (auto i : city)
+		{
+			out << city.at(i) + 1 << " ";
+		}
+		out << std::endl;
 
-	// 	twoOptRandom();
+		twoOptRandom();
 
-	// 	//最適化後に巡回路出力
-	// 	out << "<After>\t";
-	// 	for (auto i : city)
-	// 	{
-	// 		out << city.at(i) + 1 << " ";
-	// 	}
-	// 	out << std::endl;
-	// }
+		//最適化後に巡回路出力
+		out << "<After>\t";
+		for (auto i : city)
+		{
+			out << city.at(i) + 1 << " ";
+		}
+		out << std::endl;
+	}
 
 	if (ENABLE_CHAOS_SEARCH)
 	{
@@ -122,24 +120,14 @@ int main(int argc, char const *argv[])
 
 		initializeChaosNN();
 
-		//TODO:こっから正直良くわかってないまま書いている。多分間違っている
-		//TODO:Swapする条件を詳しくしりたい	現状はxの最大値だった都市ijをswap
-		//上記の問題点:xに格納される値がsigmoid関数により0か1となってしまうので、最大値の計算が1を取るxの最後の要素番号のxが決定されてしまう..	-> 上から１があり次第その都市でswapする
-		//また、現在巡回路cityのみをswapしているが、ニューロンx[i]とx[j]でswapしなくてよいのか？	-> 都市番号とニューロン番号を対応させること
 		for (int t = 1; t < T_TIMES; t++) //tが0回目のときはinitializeChaosNN()で初期化した値とする。tが1回目から0回目の情報を使ってカオスニューラルネットワークの状態を更新していく
 		{
-			// double maxX = 0.0; //カオスニューロンの出力 x が最大のものを格納
-			// int max_i = 0;	   //最大値だったxの要素番号を格納
 			for (int i = 0; i < CITY_NUM; i++)
 			{
 				cnn[t].x[i] = calcX(t, i);
 
 				if (cnn[t].x[i] >= 0.5)
 				{
-					// out << "debug: main twoOptSwap t = " << t
-					// 	<< " i = " << i
-					// 	<< " cnn[t].delta_i[i] " << cnn[t].delta_i[i] << " cnn[t].delta_j[i] = " << cnn[t].delta_j[i]
-					// 	<< std::endl;
 					if (swapPermission(cnn[t].delta_i[i], cnn[t].delta_j[i])) //TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
 					{
 						twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
@@ -155,33 +143,22 @@ int main(int argc, char const *argv[])
 							<< "city[cnn[t].delta_i[i]] = " << city[cnn[t].delta_i[i]] << ", city[cnn[t].delta_j[i]] = " << city[cnn[t].delta_j[i]]
 							<< std::endl;
 					}
-
-					// twoOptSwap(cnn[t].delta_i[i], cnn[t].delta_j[i]);
-
-					// int distance = calcDistance();
-					// out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
-					// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
 				}
 				else
 				{
 					continue;
 				}
-				// if (maxX <= cnn[t].x[i])
-				// {
-				// 	maxX = cnn[t].x[i];
-				// 	max_i = i;
-				// }
 			}
-			// twoOptSwap(cnn[t].delta_i[max_i], cnn[t].delta_j[max_i]); //多分間違い(時刻tのときx[i]の最大値だった時のΔijの引数で交換を実行? -> 最終的な最適化??)
-
-			// cnn[t].isMaxX[max_i] = true;
-
-			// //コストを出力
-			// int distance = calcDistance();
-			// out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl
-			// 	<< "debug:Remaining t times:\t" << T_TIMES - t + 1 << std::endl;
 			out << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
 		}
+
+		//最適化後に巡回路出力
+		out << "<After>\t";
+		for (auto i : city)
+		{
+			out << city.at(i) + 1 << " ";
+		}
+		out << std::endl;
 		int distance = calcDistance();
 		out << "debug:After Chaos Search Total Distance:\t" << distance << std::endl;
 	}
@@ -243,14 +220,11 @@ void makeFirstTour(void)
 inline int calcDistance(void)
 {
 	int sum = 0;
-	// out << "<Total Distance>\t";
 	for (int i = 0; i < CITY_NUM - 1; i++)
 	{
 		sum += edge[city[i]][city[i + 1]];
 	}
 	sum += edge[city[CITY_NUM - 1]][city[0]];
-	// out << sum << endl
-	// 	<< endl;
 
 	return sum;
 }
@@ -321,7 +295,7 @@ inline bool twoOptPermission(int p1, int p2)
 		{
 			range1 = edge[p1][p1 + 1] + edge[p2][0]; //繋ぎ変える前
 			range2 = edge[p1][p2] + edge[p1 + 1][0]; //繋ぎ変えた後
-			if (range1 >= range2)					 // TODO:">"だけだと無限ループになるのか要検証
+			if (range1 >= range2)
 			{
 				return true;
 			}
@@ -334,7 +308,7 @@ inline bool twoOptPermission(int p1, int p2)
 		{
 			range1 = edge[p1][p1 + 1] + edge[p2][p2 + 1]; //繋ぎ変える前
 			range2 = edge[p1][p2] + edge[p1 + 1][p2 + 1]; //繋ぎ変えた後
-			if (range1 >= range2)						  // TODO:">"だけだと無限ループになるのか要検証
+			if (range1 >= range2)
 			{
 				return true;
 			}
@@ -387,7 +361,7 @@ inline void twoOptSwap(int p1, int p2)
 	}
 	else
 	{
-		std::cout << "ERROR:2-optSwap, Not swapPermission Point" << std::endl; //TODO:実行するとここのエラーが出る
+		std::cout << "ERROR:2-optSwap, Not swapPermission Point" << std::endl;
 		exit(0);
 	}
 }
@@ -401,7 +375,6 @@ inline double calcZai(int t, int i)
 {
 	double max = 0.0;
 	bool isFirst = true; //初期max代入時に利用
-	// std::vector<int> oldCity = city; //最短ルート保存用vector、2optの前後で合計のコストと比較し2opt後でコストが増えればこの変数を利用し、ロールバックする
 	int cityIndex_i = 0; //都市番号とニューロン番号を一致させるため、for文でcity[]の中身とiが一致->都市番号iとニューロン番号iが一致した時のcity[]の要素番号を格納(もっと効率良い方法ありそう)
 	int cityIndex_j = 0;
 	for (int k = 0; k < CITY_NUM; k++)
@@ -438,27 +411,26 @@ inline double calcZai(int t, int i)
 				max = sumZetaBetaDelta;
 				cnn[t].delta_j[i] = cityIndex_j;
 				isFirst = false;
-				out << "debug: calcZai First i = " << i
-					<< " j = " << j << std::endl
-					<< "city[cityIndex_i] = " << city[cityIndex_i]
-					<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
-					<< "cityIndex_i = " << cityIndex_i
-					<< " cityIndex_j = " << cityIndex_j
-					<< std::endl;
+				// out << "debug: calcZai First i = " << i
+				// 	<< " j = " << j << std::endl
+				// 	<< "city[cityIndex_i] = " << city[cityIndex_i]
+				// 	<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
+				// 	<< "cityIndex_i = " << cityIndex_i
+				// 	<< " cityIndex_j = " << cityIndex_j
+				// 	<< std::endl;
 			}
 			else if (max <= sumZetaBetaDelta)
 			{
 				max = sumZetaBetaDelta;
 				cnn[t].delta_j[i] = cityIndex_j;
-				out << "debug: calcZai i = " << i
-					<< " j = " << j << std::endl
-					<< "city[cityIndex_i] = " << city[cityIndex_i]
-					<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
-					<< "cityIndex_i = " << cityIndex_i
-					<< " cityIndex_j = " << cityIndex_j
-					<< std::endl;
+				// out << "debug: calcZai i = " << i
+				// 	<< " j = " << j << std::endl
+				// 	<< "city[cityIndex_i] = " << city[cityIndex_i]
+				// 	<< " city[cityIndex_j] = " << city[cityIndex_j] << std::endl
+				// 	<< "cityIndex_i = " << cityIndex_i
+				// 	<< " cityIndex_j = " << cityIndex_j
+				// 	<< std::endl;
 			}
-			// city = oldCity; //Δijの計算のたびにロールバック
 		}
 	}
 
@@ -479,19 +451,10 @@ inline double calcEta(int t, int i)
 	return -WEIGHT * sum + WEIGHT;
 }
 
-inline double calcZeta(int t, int i) //TODO:Zetaはdを含まない形で実装(7)
+inline double calcZeta(int t, int i) //Zetaはdを含まない形で実装(7)
 {
-	t = t - 1;												  //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
-	return (KR * cnn[t].zeta[i]) - (ALPHA * cnn[t].x[i]) + R; //(7)に変更 TODO:要確認
-
-	// double sum = 0.0;
-
-	// for (int d = 0; d <= t; d++)
-	// {
-	// 	sum += pow(KR, d) * cnn[t - d].x[i];
-	// }
-
-	// return -ALPHA * sum + THETA;
+	t = t - 1; //tはt+1から入力されるため、前の時刻tを利用するためにtから1を引いている
+	return (KR * cnn[t].zeta[i]) - (ALPHA * cnn[t].x[i]) + R;
 }
 
 inline int calcDelta(int i, int j)
@@ -524,7 +487,7 @@ inline double calcX(int t, int i)
 
 void initializeChaosNN(void)
 {
-	//TODO:時刻tの時の初期値	xの初期値もその後の計算後も0か1にしかならない
+	//xの初期値もその後の計算後も0か1にしかならない -> それでいい、そうなってしまうもの
 	std::uniform_real_distribution<> distr(0.0, 1.0);
 	for (int t = 0; t < T_TIMES; t++)
 	{
