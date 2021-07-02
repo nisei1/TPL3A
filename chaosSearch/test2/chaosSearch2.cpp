@@ -20,8 +20,8 @@
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define ATTEMPT_TIMES 5			 //試行回数-適当に決めてよい
-#define T_TIMES 5				 //時刻tがどこまで増やすのか適当に決めてよい
+#define ATTEMPT_TIMES 100			 //試行回数-適当に決めてよい
+#define T_TIMES 100				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -128,12 +128,12 @@ int main(int argc, char const *argv[])
 			makeFirstTour();
 			bool isOptimalSolution = false; //最適解に達したら外側のループを抜ける(フラグ変数)
 			//最適化前に巡回路出力
-			g_OutDebug << "<before>\t";
-			for (auto i : g_City)
-			{
-				g_OutDebug << g_City.at(i) + 1 << " ";
-			}
-			g_OutDebug << std::endl;
+			// g_OutDebug << "<before>\t";
+			// for (auto i : g_City)
+			// {
+			// 	g_OutDebug << g_City.at(i) + 1 << " ";
+			// }
+			// g_OutDebug << std::endl;
 
 			initializeChaosNN();
 
@@ -148,7 +148,7 @@ int main(int argc, char const *argv[])
 						if (swapPermission(g_Cnn[t].delta_i[i], g_Cnn[t].delta_j[i])) //TODO:エラーをスルーするようなif文。本来いらないはず-> 最大値のij
 						{
 							twoOptSwap(g_Cnn[t].delta_i[i], g_Cnn[t].delta_j[i]);
-							g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
+							// g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
 							if (OPTIMAL_SOLUTION == calcDistance())
 							{
 								isOptimalSolution = true;
@@ -170,7 +170,7 @@ int main(int argc, char const *argv[])
 						continue;
 					}
 				}
-				g_OutDebug << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
+				// g_OutDebug << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
 				if (isOptimalSolution)
 				{
 					break;
@@ -178,13 +178,13 @@ int main(int argc, char const *argv[])
 			}
 
 			//最適化後に巡回路出力
-			g_OutDebug << "<After>\t";
-			for (auto i : g_City)
-			{
-				g_OutDebug << g_City.at(i) + 1 << " ";
-			}
-			g_OutDebug << std::endl;
-			g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
+			// g_OutDebug << "<After>\t";
+			// for (auto i : g_City)
+			// {
+			// 	g_OutDebug << g_City.at(i) + 1 << " ";
+			// }
+			// g_OutDebug << std::endl;
+			// g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
 
 			g_OutCSV << k + 1 << "," << calcDistance() << std::endl;
 			resultsList.push_back(calcDistance());
