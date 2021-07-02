@@ -20,7 +20,7 @@
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define ATTEMPT_TIMES 100			 //試行回数-適当に決めてよい
+#define ATTEMPT_TIMES 100		 //試行回数-適当に決めてよい
 #define T_TIMES 100				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
@@ -66,24 +66,22 @@ std::mt19937 g_Engine(g_Seed_Gen() * g_Time);
 std::vector<ChaosNN> g_Cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
 
 /***テンプレート関数の宣言***/
-inline void inputTSP(void);					  //TSPをg_Edgeへ格納する関数
-inline void makeFirstTour(void);			  //初回巡回路をランダムに作成する関数
-inline int calcDistance(void);				  //巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
-inline void twoOptRandom(void);				  //ランダムな2点を選んで2-opt交換する関数
-inline bool twoOptPermission(int p1, int p2); //ランダム2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void twoOptSwap(int p1, int p2);		  //ランダム2-opt交換実行関数(引数:都市1,都市2)
-inline bool swapPermission(int p1, int p2);	  //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void initializeChaosNN(void);		  //時刻tの時の初期値
-inline double sigmoid(double x);			  //シグモイド関数
-inline double calcZai(int t, int i);		  //(3)式関数
-inline double calcEta(int t, int i);		  //(4)式関数
-inline int calcDelta(int i, int j);			  //(3)式のΔij関数
-inline double calcZeta(int t, int i);		  //(5)式関数
-inline double calcX(int t, int i);			  //(6)式関数
-template <typename T>
-inline T variance(const std::vector<T> &resultsList); //不偏標本分散を計算
-template <typename T>
-inline T standardDeviation(std::vector<T> &resultsList); //標準偏差を計算
+inline void inputTSP(void);										//TSPをg_Edgeへ格納する関数
+inline void makeFirstTour(void);								//初回巡回路をランダムに作成する関数
+inline int calcDistance(void);									//巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
+inline void twoOptRandom(void);									//ランダムな2点を選んで2-opt交換する関数
+inline bool twoOptPermission(int p1, int p2);					//ランダム2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void twoOptSwap(int p1, int p2);							//ランダム2-opt交換実行関数(引数:都市1,都市2)
+inline bool swapPermission(int p1, int p2);						//2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void initializeChaosNN(void);							//時刻tの時の初期値
+inline double sigmoid(double x);								//シグモイド関数
+inline double calcZai(int t, int i);							//(3)式関数
+inline double calcEta(int t, int i);							//(4)式関数
+inline int calcDelta(int i, int j);								//(3)式のΔij関数
+inline double calcZeta(int t, int i);							//(5)式関数
+inline double calcX(int t, int i);								//(6)式関数
+inline double variance(const std::vector<int> &resultsList);	//不偏標本分散を計算
+inline double standardDeviation(std::vector<int> &resultsList); //標準偏差を計算
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -187,10 +185,10 @@ int main(int argc, char const *argv[])
 			// g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
 
 			g_OutCSV << k + 1 << "," << calcDistance() << std::endl;
-			resultsList.push_back(calcDistance());
+			resultsList.push_back(calcDistance() - OPTIMAL_SOLUTION);
 		}
 		g_OutDebug << "Variance:\t" << variance(resultsList) << std::endl
-				   << "Standard deviation:\t" << standardDeviation(resultsList) << std::endl;
+				   << "Standard deviation:\t±" << standardDeviation(resultsList) << std::endl;
 	}
 	return 0;
 }
@@ -533,18 +531,17 @@ inline void initializeChaosNN(void)
 	}
 }
 
-template <typename T>
-inline T variance(const std::vector<T> &resultsList)
+inline double variance(const std::vector<int> &resultsList)
 {
 	size_t sz = resultsList.size();
 	if (sz == 1)
 		return 0.0;
 
 	// Calculate the mean
-	T mean = std::accumulate(resultsList.begin(), resultsList.end(), 0.0) / sz;
+	double mean = std::accumulate(resultsList.begin(), resultsList.end(), 0.0) / sz;
 
 	// Now calculate the variance
-	auto variance_func = [&mean, &sz](T accumulator, const T &val)
+	auto variance_func = [&mean, &sz](double accumulator, const double &val)
 	{
 		return accumulator + ((val - mean) * (val - mean) / (sz - 1));
 	};
@@ -552,8 +549,7 @@ inline T variance(const std::vector<T> &resultsList)
 	return std::accumulate(resultsList.begin(), resultsList.end(), 0.0, variance_func);
 }
 
-template <typename T>
-inline T standardDeviation(std::vector<T> &resultsList)
+inline double standardDeviation(std::vector<int> &resultsList)
 {
 	return sqrt(variance(resultsList));
 }
