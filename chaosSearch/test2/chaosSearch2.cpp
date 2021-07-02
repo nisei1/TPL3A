@@ -6,6 +6,7 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
@@ -13,13 +14,14 @@
 #define OUT_DEBUG_NAME "outDebug.txt"	 //書き出したいファイル名
 #define CSV_NAME "outCost.csv"			 //書き出したいcsvファイル名
 //TSP用定数宣言
-#define CITY_NUM 43 //TSPの都市数
+#define CITY_NUM 43			  //TSPの都市数
+#define OPTIMAL_SOLUTION 5620 //事前に分かっている最適解 -> これが出たら止める
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define ATTEMPT_TIMES 3			 //試行回数-適当に決めてよい
-#define T_TIMES 100				 //時刻tがどこまで増やすのか適当に決めてよい
+#define ATTEMPT_TIMES 5			 //試行回数-適当に決めてよい
+#define T_TIMES 5				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -78,6 +80,10 @@ inline double calcEta(int t, int i);		  //(4)式関数
 inline int calcDelta(int i, int j);			  //(3)式のΔij関数
 inline double calcZeta(int t, int i);		  //(5)式関数
 inline double calcX(int t, int i);			  //(6)式関数
+template <typename T>
+inline T variance(const std::vector<T> &resultsList); //不偏標本分散を計算
+template <typename T>
+inline T standardDeviation(std::vector<T> &resultsList); //標準偏差を計算
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -109,12 +115,18 @@ int main(int argc, char const *argv[])
 
 	if (ENABLE_CHAOS_SEARCH)
 	{
+		std::vector<int> resultsList;
 		g_OutDebug << "EnableChaosSearch" << std::endl;
 		g_OutCSV << "ATTEMPT_TIMES,COST" << std::endl;
+		if (resultsList.empty() == false)
+		{
+			resultsList.clear();
+		}
+
 		for (int k = 0; k < ATTEMPT_TIMES; k++)
 		{
 			makeFirstTour();
-
+			bool isOptimalSolution = false; //最適解に達したら外側のループを抜ける(フラグ変数)
 			//最適化前に巡回路出力
 			g_OutDebug << "<before>\t";
 			for (auto i : g_City)
@@ -137,6 +149,11 @@ int main(int argc, char const *argv[])
 						{
 							twoOptSwap(g_Cnn[t].delta_i[i], g_Cnn[t].delta_j[i]);
 							g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
+							if (OPTIMAL_SOLUTION == calcDistance())
+							{
+								isOptimalSolution = true;
+								break;
+							}
 						}
 						else
 						{
@@ -154,6 +171,10 @@ int main(int argc, char const *argv[])
 					}
 				}
 				g_OutDebug << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
+				if (isOptimalSolution)
+				{
+					break;
+				}
 			}
 
 			//最適化後に巡回路出力
@@ -166,7 +187,10 @@ int main(int argc, char const *argv[])
 			g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
 
 			g_OutCSV << k + 1 << "," << calcDistance() << std::endl;
+			resultsList.push_back(calcDistance());
 		}
+		g_OutDebug << "Variance:\t" << variance(resultsList) << std::endl
+				   << "Standard deviation:\t" << standardDeviation(resultsList) << std::endl;
 	}
 	return 0;
 }
@@ -507,4 +531,29 @@ inline void initializeChaosNN(void)
 			g_Cnn[t].delta_j[i] = 0;
 		}
 	}
+}
+
+template <typename T>
+inline T variance(const std::vector<T> &resultsList)
+{
+	size_t sz = resultsList.size();
+	if (sz == 1)
+		return 0.0;
+
+	// Calculate the mean
+	T mean = std::accumulate(resultsList.begin(), resultsList.end(), 0.0) / sz;
+
+	// Now calculate the variance
+	auto variance_func = [&mean, &sz](T accumulator, const T &val)
+	{
+		return accumulator + ((val - mean) * (val - mean) / (sz - 1));
+	};
+
+	return std::accumulate(resultsList.begin(), resultsList.end(), 0.0, variance_func);
+}
+
+template <typename T>
+inline T standardDeviation(std::vector<T> &resultsList)
+{
+	return sqrt(variance(resultsList));
 }

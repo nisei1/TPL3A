@@ -36,3 +36,6 @@
 
 #out.txtを除外
 *.txt
+
+#.csvを除外
+*.csv
