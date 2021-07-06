@@ -10,12 +10,12 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_TSP_NAME "../../TSP/p43a.txt" //読み込みたいTSP
+#define IN_TSP_NAME "../../TSP/kroA100a.txt" //読み込みたいTSP
 #define OUT_DEBUG_NAME "outDebug.txt"	 //書き出したいファイル名
 #define CSV_NAME "outCost.csv"			 //書き出したいcsvファイル名
 //TSP用定数宣言
-#define CITY_NUM 43			  //TSPの都市数
-#define OPTIMAL_SOLUTION 5620 //事前に分かっている最適解 -> これが出たら止める
+#define CITY_NUM 100			  //TSPの都市数
+#define OPTIMAL_SOLUTION 21282 //事前に分かっている最適解 -> これが出たら止める
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
