@@ -10,18 +10,18 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_TSP_NAME "../../TSP/kroA100a.txt" //読み込みたいTSP
-#define OUT_DEBUG_NAME "outDebug.txt"		 //書き出したいファイル名
-#define CSV_NAME "outCost.csv"				 //書き出したいcsvファイル名
+#define IN_TSP_NAME "../../TSP/p43a.txt" //読み込みたいTSP
+#define OUT_DEBUG_NAME "p43aDebug.txt"	 //書き出したいファイル名
+#define CSV_NAME "p43aCost.csv"			 //書き出したいcsvファイル名
 //TSP用定数宣言
-#define CITY_NUM 100		   //TSPの都市数
-#define OPTIMAL_SOLUTION 21282 //事前に分かっている最適解 -> これが出たら止める
+#define CITY_NUM 43			  //TSPの都市数
+#define OPTIMAL_SOLUTION 5620 //beli52 7542 //kroa 21282 //事前に分かっている最適解 -> これが出たら止める
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
 #define ATTEMPT_TIMES 30		 //試行回数-適当に決めてよい
-#define T_TIMES 10000			 //時刻tがどこまで増やすのか適当に決めてよい
+#define T_TIMES 3				 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -66,22 +66,23 @@ std::mt19937 g_Engine(g_Seed_Gen() * g_Time);
 std::vector<ChaosNN> g_Cnn(T_TIMES); //カオスサーチ用のvector<ChaosNN>
 
 /***テンプレート関数の宣言***/
-inline void inputTSP(void);										//TSPをg_Edgeへ格納する関数
-inline void makeFirstTour(void);								//初回巡回路をランダムに作成する関数
-inline int calcDistance(void);									//巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
-inline void twoOptRandom(void);									//ランダムな2点を選んで2-opt交換する関数
-inline bool twoOptPermission(int p1, int p2);					//ランダム2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void twoOptSwap(int p1, int p2);							//ランダム2-opt交換実行関数(引数:都市1,都市2)
-inline bool swapPermission(int p1, int p2);						//2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
-inline void initializeChaosNN(void);							//時刻tの時の初期値
-inline double sigmoid(double x);								//シグモイド関数
-inline double calcZai(int t, int i);							//(3)式関数
-inline double calcEta(int t, int i);							//(4)式関数
-inline int calcDelta(int i, int j);								//(3)式のΔij関数
-inline double calcZeta(int t, int i);							//(5)式関数
-inline double calcX(int t, int i);								//(6)式関数
-inline double variance(const std::vector<int> &resultsList);	//不偏標本分散を計算
-inline double standardDeviation(std::vector<int> &resultsList); //標準偏差を計算
+inline void inputTSP(void);									   //TSPをg_Edgeへ格納する関数
+inline void makeFirstTour(void);							   //初回巡回路をランダムに作成する関数
+inline int calcDistance(void);								   //巡回路の総コスト計算関数(戻り値:(int)巡回路の総コスト)
+inline void twoOptRandom(void);								   //ランダムな2点を選んで2-opt交換する関数
+inline bool twoOptPermission(int p1, int p2);				   //ランダム2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void twoOptSwap(int p1, int p2);						   //ランダム2-opt交換実行関数(引数:都市1,都市2)
+inline bool swapPermission(int p1, int p2);					   //2-opt可能な2点かどうか判定(引数:都市1,都市2)(戻り値:true or false)
+inline void initializeChaosNN(void);						   //時刻tの時の初期値
+inline double sigmoid(double x);							   //シグモイド関数
+inline double calcZai(int t, int i);						   //(3)式関数
+inline double calcEta(int t, int i);						   //(4)式関数
+inline int calcDelta(int i, int j);							   //(3)式のΔij関数
+inline double calcZeta(int t, int i);						   //(5)式関数
+inline double calcX(int t, int i);							   //(6)式関数
+inline double variance(const std::vector<double> &gapList);	   //不偏標本分散を計算
+inline double standardDeviation(std::vector<double> &gapList); //標準偏差を計算
+inline double calcAverage(std::vector<double> &gapList);	   //平均値を計算
 
 /***main関数***/
 int main(int argc, char const *argv[])
@@ -114,12 +115,12 @@ int main(int argc, char const *argv[])
 	if (ENABLE_CHAOS_SEARCH)
 	{
 		int countOptimal = 0; //何回帯域最適解に到達したか
-		std::vector<int> resultsList;
+		std::vector<double> gapList;
 		g_OutDebug << "EnableChaosSearch" << std::endl;
-		g_OutCSV << "ATTEMPT_TIMES,COST" << std::endl;
-		if (resultsList.empty() == false)
+		g_OutCSV << "ATTEMPT_TIMES,COST,GAP" << std::endl;
+		if (gapList.empty() == false)
 		{
-			resultsList.clear();
+			gapList.clear();
 		}
 
 		for (int k = 0; k < ATTEMPT_TIMES; k++)
@@ -170,7 +171,7 @@ int main(int argc, char const *argv[])
 						continue;
 					}
 				}
-				// g_OutDebug << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
+				g_OutDebug << "debug:Remaining t times:\t" << T_TIMES - t - 1 << std::endl;
 				if (isOptimalSolution)
 				{
 					break;
@@ -185,12 +186,14 @@ int main(int argc, char const *argv[])
 			// }
 			// g_OutDebug << std::endl;
 			// g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
-
-			g_OutCSV << k + 1 << "," << calcDistance() << std::endl;
-			resultsList.push_back(calcDistance() - OPTIMAL_SOLUTION);
+			double gap = ((double)(calcDistance() - OPTIMAL_SOLUTION) / OPTIMAL_SOLUTION) * 100;
+			gapList.push_back(gap);
+			g_OutCSV << k + 1 << "," << calcDistance() << "," << gap << std::endl;
+			g_OutDebug << "debug:Remaining ATTEMPT TIMES:\t" << ATTEMPT_TIMES - k - 1 << std::endl;
 		}
-		g_OutDebug << "Variance:\t" << variance(resultsList) << std::endl
-				   << "Standard deviation:\t±" << standardDeviation(resultsList) << std::endl
+		g_OutDebug << "Gap Average:\t" << calcAverage(gapList) << "%" << std::endl
+				   << "Gap Variance:\t" << variance(gapList) << std::endl
+				   << "Gap Standard deviation:\t±" << standardDeviation(gapList) << std::endl
 				   << "Number of times the optimal solution was reached:\t" << countOptimal << "/" << ATTEMPT_TIMES << std::endl;
 	}
 	return 0;
@@ -534,14 +537,14 @@ inline void initializeChaosNN(void)
 	}
 }
 
-inline double variance(const std::vector<int> &resultsList)
+inline double variance(const std::vector<double> &gapList)
 {
-	size_t sz = resultsList.size();
+	size_t sz = gapList.size();
 	if (sz == 1)
 		return 0.0;
 
 	// Calculate the mean
-	double mean = std::accumulate(resultsList.begin(), resultsList.end(), 0.0) / sz;
+	double mean = std::accumulate(gapList.begin(), gapList.end(), 0.0) / sz;
 
 	// Now calculate the variance
 	auto variance_func = [&mean, &sz](double accumulator, const double &val)
@@ -549,10 +552,21 @@ inline double variance(const std::vector<int> &resultsList)
 		return accumulator + ((val - mean) * (val - mean) / (sz - 1));
 	};
 
-	return std::accumulate(resultsList.begin(), resultsList.end(), 0.0, variance_func);
+	return std::accumulate(gapList.begin(), gapList.end(), 0.0, variance_func);
 }
 
-inline double standardDeviation(std::vector<int> &resultsList)
+inline double standardDeviation(std::vector<double> &gapList)
 {
-	return sqrt(variance(resultsList));
+	return sqrt(variance(gapList));
+}
+
+inline double calcAverage(std::vector<double> &gapList)
+{
+	double sum = 0.0;
+	double ave = 0.0;
+	for (int i = 0; i < gapList.size(); i++)
+	{
+		sum += gapList[i];
+	}
+	return sum / gapList.size();
 }
