@@ -11,17 +11,17 @@
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
 #define IN_TSP_NAME "../../TSP/kroA100a.txt" //読み込みたいTSP
-#define OUT_DEBUG_NAME "outDebug.txt"	 //書き出したいファイル名
-#define CSV_NAME "outCost.csv"			 //書き出したいcsvファイル名
+#define OUT_DEBUG_NAME "outDebug.txt"		 //書き出したいファイル名
+#define CSV_NAME "outCost.csv"				 //書き出したいcsvファイル名
 //TSP用定数宣言
-#define CITY_NUM 100			  //TSPの都市数
+#define CITY_NUM 100		   //TSPの都市数
 #define OPTIMAL_SOLUTION 21282 //事前に分かっている最適解 -> これが出たら止める
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
 //カオスサーチで使う定数の宣言
-#define ATTEMPT_TIMES 100		 //試行回数-適当に決めてよい
-#define T_TIMES 100				 //時刻tがどこまで増やすのか適当に決めてよい
+#define ATTEMPT_TIMES 30		 //試行回数-適当に決めてよい
+#define T_TIMES 10000			 //時刻tがどこまで増やすのか適当に決めてよい
 #define ENABLE_CHAOS_SEARCH true //カオスサーチするか 有効= true ,無効 = false
 #define ALPHA 1.0
 #define BETA 75.0
@@ -113,6 +113,7 @@ int main(int argc, char const *argv[])
 
 	if (ENABLE_CHAOS_SEARCH)
 	{
+		int countOptimal = 0; //何回帯域最適解に到達したか
 		std::vector<int> resultsList;
 		g_OutDebug << "EnableChaosSearch" << std::endl;
 		g_OutCSV << "ATTEMPT_TIMES,COST" << std::endl;
@@ -149,6 +150,7 @@ int main(int argc, char const *argv[])
 							// g_OutDebug << "debug:After Chaos Search Total Distance:\t" << calcDistance() << std::endl;
 							if (OPTIMAL_SOLUTION == calcDistance())
 							{
+								countOptimal++;
 								isOptimalSolution = true;
 								break;
 							}
@@ -188,7 +190,8 @@ int main(int argc, char const *argv[])
 			resultsList.push_back(calcDistance() - OPTIMAL_SOLUTION);
 		}
 		g_OutDebug << "Variance:\t" << variance(resultsList) << std::endl
-				   << "Standard deviation:\t±" << standardDeviation(resultsList) << std::endl;
+				   << "Standard deviation:\t±" << standardDeviation(resultsList) << std::endl
+				   << "Number of times the optimal solution was reached:\t" << countOptimal << "/" << ATTEMPT_TIMES << std::endl;
 	}
 	return 0;
 }
