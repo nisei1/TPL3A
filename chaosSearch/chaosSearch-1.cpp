@@ -10,9 +10,9 @@
 
 /***定数の宣言***/
 //ファイル入出力用の定数宣言
-#define IN_TSP_NAME "../../TSP/p43a.txt" //読み込みたいTSP
-#define OUT_DEBUG_NAME "p43aDebug.txt"	 //書き出したいファイル名
-#define CSV_NAME "p43aCost.csv"			 //書き出したいcsvファイル名
+#define IN_TSP_NAME "../TSP/p43a.txt"  //読み込みたいTSP
+#define OUT_DEBUG_NAME "p43aDebug.txt" //書き出したいファイル名
+#define CSV_NAME "p43aCost.csv"		   //書き出したいcsvファイル名
 //TSP用定数宣言
 #define CITY_NUM 43			  //TSPの都市数
 #define OPTIMAL_SOLUTION 5620 //beli52 7542 //kroa 21282 //事前に分かっている最適解 -> これが出たら止める
