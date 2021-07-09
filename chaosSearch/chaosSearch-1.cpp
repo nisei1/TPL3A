@@ -15,7 +15,7 @@
 #define CSV_NAME "p43aCost.csv"		   //書き出したいcsvファイル名
 //TSP用定数宣言
 #define CITY_NUM 43			  //TSPの都市数
-#define OPTIMAL_SOLUTION 5620 //beli52 7542 //kroa 21282 //事前に分かっている最適解 -> これが出たら止める
+#define OPTIMAL_SOLUTION 5620 //berlin52 7542 //eil51 426 //bays29 2020 //ry48 14422 //bays29 2020 //br17 39 //rbg443 2720 //rat575 6773 //lin105 14379 //p43 5620 //beli52 7542 //kroA100 21282 //事前に分かっている最適解 -> これが出たら止める
 //ランダムに2-optする時用の定数宣言
 #define ENABLE_TWO_OPT_RANDOM false //ランダム2-opt 有効= true ,無効 = false
 #define TWO_OPT_TIMES 10			//2optで何回最小値を出すか,最小値を出すまでループで減らない
